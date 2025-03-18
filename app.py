@@ -4,9 +4,9 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
-from sklearn.linear_model import LinearRegression
-from sklearn.model_selection import train_test_split
-from sklearn.metrics import mean_squared_error, r2_score
+# from sklearn.linear_model import LinearRegression
+# from sklearn.model_selection import train_test_split
+# from sklearn.metrics import mean_squared_error, r2_score
 import plotly.express as px
 
 # Set page config
@@ -22,19 +22,18 @@ def load_data():
     
     # Create a Season column
     def assign_season(month):
-        if month in [12, 1, 2]:
-            return 'Winter'
-        elif month in [3, 4, 5]:
-            return 'Spring'
-        elif month in [6, 7, 8]:
-            return 'Summer'
-        elif month in [9, 10, 11]:
-            return 'Fall'
+        if month in [4, 5, 6, 7, 8, 9]:
+            return 'Dry'
+        else:
+            return 'Rainy'
     
     df['Season'] = df['Month'].apply(assign_season)
     
     # Create a Year-Month column for time series
     df['YearMonth'] = pd.to_datetime(df['Year'].astype(str) + '-' + df['Month'].astype(str), format='%Y-%m')
+
+    # Make sure the 'Date' field is in datetime format
+    df['Date'] = pd.to_datetime(df['Date'])
     
     return df
 
@@ -88,8 +87,8 @@ elif page == "Seasonal Analysis":
         
         fig, ax = plt.subplots(figsize=(9, 6))
         sns.barplot(x='Season', y='Catch (kg)', data=seasonal_avg, 
-                   order=['Winter','Spring','Summer','Fall'], 
-                   palette=['#766CDB','#DA847C','#D9CC8B','#7CD9A5'], ax=ax)
+                   order=['Dry','Rainy'], 
+                   palette=['#766CDB','#DA847C'], ax=ax)
         ax.set_title('Average Catch by Season', fontsize=20, fontweight='semibold', color='#222222', pad=15)
         ax.set_xlabel('Season', fontsize=16, color='#333333', labelpad=10)
         ax.set_ylabel('Average Catch (kg)', fontsize=16, color='#333333', labelpad=10)
@@ -113,7 +112,7 @@ elif page == "Seasonal Analysis":
     
     st.subheader("Seasonal Catch Distribution")
     
-    selected_season = st.selectbox("Select Season", ['All Seasons', 'Winter', 'Spring', 'Summer', 'Fall'])
+    selected_season = st.selectbox("Select Season", ['All Seasons', 'Dry', 'Rainy'])
     
     if selected_season == 'All Seasons':
         filtered_df = df
@@ -122,7 +121,7 @@ elif page == "Seasonal Analysis":
     
     fig, ax = plt.subplots(figsize=(9, 6))
     sns.boxplot(x='Season', y='Catch (kg)', data=filtered_df if selected_season == 'All Seasons' else df[df['Season'] == selected_season], 
-               palette=['#766CDB','#DA847C','#D9CC8B','#7CD9A5'], ax=ax)
+               palette=['#766CDB','#DA847C'], ax=ax)
     ax.set_title(f'Catch Distribution by Season ({selected_season})', fontsize=20, fontweight='semibold', color='#222222', pad=15)
     ax.set_xlabel('Season', fontsize=16, color='#333333', labelpad=10)
     ax.set_ylabel('Catch (kg)', fontsize=16, color='#333333', labelpad=10)
@@ -170,8 +169,8 @@ elif page == "Environmental Factors":
         
         fig, ax = plt.subplots(figsize=(9, 6))
         sns.boxplot(x='Season', y=selected_factor, data=df, 
-                   order=['Winter','Spring','Summer','Fall'], 
-                   palette=['#766CDB','#DA847C','#D9CC8B','#7CD9A5'], ax=ax)
+                   order=['Dry','Rainy'], 
+                   palette=['#766CDB','#DA847C'], ax=ax)
         ax.set_title(f'{env_factor} by Season', fontsize=20, fontweight='semibold', color='#222222', pad=15)
         ax.set_xlabel('Season', fontsize=16, color='#333333', labelpad=10)
         ax.set_ylabel(env_factor, fontsize=16, color='#333333', labelpad=10)
@@ -179,14 +178,13 @@ elif page == "Environmental Factors":
         ax.grid(True, linestyle='--', alpha=0.7, color='#E0E0E0')
         st.pyplot(fig)
     
-    st.subheader("Correlation Matrix")
+    st.subheader("Correlation Matrix of Dataset")
     
     # Calculate correlation matrix
-    corr_matrix = df[['Catch (kg)', 'SST', 'CHL', 'MLD', 'Salin']].corr()
+    corr_matrix = df[['Day', 'Month', 'Year', 'Date', 'SST', 'CHL', 'MLD', 'Salin', 'Catch (kg)']].corr()
     
-    fig, ax = plt.subplots(figsize=(9, 8))
+    fig, ax = plt.subplots(figsize=(9, 6))
     sns.heatmap(corr_matrix, annot=True, cmap='coolwarm', fmt='.2f', linewidths=0.5, ax=ax)
-    ax.set_title('Correlation Matrix of Environmental Factors', fontsize=20, fontweight='semibold', color='#222222', pad=15)
     ax.tick_params(labelsize=14, colors='#555555')
     st.pyplot(fig)
 
@@ -197,7 +195,7 @@ elif page == "Spatial Analysis":
     st.write("This page shows the spatial distribution of skipjack tuna catch.")
     
     # Filter by season
-    selected_season = st.selectbox("Filter by Season", ['All Seasons', 'Winter', 'Spring', 'Summer', 'Fall'])
+    selected_season = st.selectbox("Filter by Season", ['All Seasons', 'Dry', 'Rainy'])
     
     if selected_season == 'All Seasons':
         filtered_df = df
